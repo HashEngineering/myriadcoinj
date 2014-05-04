@@ -20,20 +20,20 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>com.google</groupId>
-        <artifactId>limecoinj-parent</artifactId>
+        <artifactId>myriadcoinj-parent</artifactId>
         <version>0.12-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>limecoinj-examples</artifactId>
+    <artifactId>myriadcoinj-examples</artifactId>
 
-    <name>limecoinj Examples</name>
-    <description>A collection of examples using the limecoinj library</description>
+    <name>myriadcoinj Examples</name>
+    <description>A collection of examples using the myriadcoinj library</description>
 
     <dependencies>
         <dependency>
             <groupId>com.google</groupId>
-            <artifactId>limecoinj</artifactId>
+            <artifactId>myriadcoinj</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
