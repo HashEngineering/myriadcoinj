@@ -18,7 +18,7 @@ public class CoinDefinition {
     public static final String coinName = "Myriadcoin";
     public static final String coinTicker = "MYR";
     public static final String coinURIScheme = "myriadcoin";
-    public static final String cryptsyMarketId = "155";
+    public static final String cryptsyMarketId = "200";
     public static final String cryptsyMarketCurrency = "BTC";
     public static final String PATTERN_PRIVATE_KEY_START = "6";
 
@@ -40,15 +40,16 @@ public class CoinDefinition {
     enum CoinHash {
         SHA256,
         scrypt,
-        x11
+        x11,
+        custom
     };
-    public static final CoinHash coinPOWHash = CoinHash.x11;
+    public static final CoinHash coinPOWHash = CoinHash.custom;
 
     public static boolean checkpointFileSupport = true;
 
-    public static final int TARGET_TIMESPAN = (int)(150);  // 24 hours per difficulty cycle, on average.
+    public static final int TARGET_TIMESPAN = (int)(150);  // 2.5 hours per difficulty cycle, on average.
     public static final int TARGET_SPACING = (int)(150);  // 2.5 minutes seconds per block.
-    public static final int INTERVAL = TARGET_TIMESPAN / TARGET_SPACING;  //36 blocks
+    public static final int INTERVAL = TARGET_TIMESPAN / TARGET_SPACING;  //1 blocks
 
     static final long nAveragingInterval = 10; // 10 blocks
     static final long nAveragingTargetTimespan = nAveragingInterval * TARGET_SPACING; // 25 minutes
@@ -63,7 +64,7 @@ public class CoinDefinition {
             return INTERVAL;      //108
     }
     public static final int getIntervalCheckpoints() {
-            return INTERVAL;
+            return 2000;
 
     }
     public static final int getTargetTimespan(int height, boolean testNet) {
@@ -83,6 +84,7 @@ public class CoinDefinition {
 
     public static final int PROTOCOL_VERSION = 70001;          //version.h PROTOCOL_VERSION
     public static final int MIN_PROTOCOL_VERSION = 209;        //version.h MIN_PROTO_VERSION
+    public static final int BIP0031_VERSION = 60000;
 
     public static final int BLOCK_CURRENTVERSION = 2;   //CBlock::CURRENT_VERSION
     public static final int MAX_BLOCK_SIZE = 1 * 1000 * 1000;
@@ -110,8 +112,8 @@ public class CoinDefinition {
     static public String genesisMerkleRoot = "3f75db3c18e92f46c21530dc1222e1fddf4ccebbf88e289a6c9dc787fd6469da";
     static public int genesisBlockValue = 1000;                                                              //main.cpp: LoadBlockIndex
     //taken from the raw data of the block explorer
-    static public String genesisXInBytes = "04ffff001d010436323031342d30322d3233204654202d204732302061696d7320746f20616464202432746e20746f20676c6f62616c2065636f6e6f6d79";   //"limecoin se convertira en una de las monedas mas segura del mercado, checa nuestros avances"
-    static public String genessiXOutBytes = "04e941763c7750969e751bee1ffbe96a651a0feb131db046546c219ea40bff40b95077dc9ba1c05af991588772d8daabbda57386c068fb9bc7477c5e28702d5eb9";
+    static public String genesisTxInBytes = "04ffff001d010436323031342d30322d3233204654202d204732302061696d7320746f20616464202432746e20746f20676c6f62616c2065636f6e6f6d79";   //"limecoin se convertira en una de las monedas mas segura del mercado, checa nuestros avances"
+    static public String genesisTxOutBytes = "04e941763c7750969e751bee1ffbe96a651a0feb131db046546c219ea40bff40b95077dc9ba1c05af991588772d8daabbda57386c068fb9bc7477c5e28702d5eb9";
 
     //net.cpp strDNSSeed
     static public String[] dnsSeeds = new String[] {
@@ -121,10 +123,10 @@ public class CoinDefinition {
             "seed4.myriadcoin.org",
     };
 
-    public static int minBroadcastConnections = 0;   //0 for default; we need more peers.
+    public static int minBroadcastConnections = 1;   //0 for default; we need more peers.
 
     //
-    // TestNet - limecoin - not tested
+    // TestNet - not tested
     //
     public static final boolean supportsTestNet = false;
     public static final int testnetAddressHeader = 88;             //base58.h CBitcoinAddress::PUBKEY_ADDRESS_TEST

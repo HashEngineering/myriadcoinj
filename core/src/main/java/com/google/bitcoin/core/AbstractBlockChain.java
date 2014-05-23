@@ -797,7 +797,7 @@ public abstract class AbstractBlockChain {
     {
         for(;;)
         {
-            if(block == null)
+            if(block == null || block.getHeader().getPrevBlockHash().equals(Sha256Hash.ZERO_HASH))
                 return null;
             if(block.getHeader().getAlgo() == algo)
                 return block;
@@ -851,9 +851,10 @@ public abstract class AbstractBlockChain {
             firstBlockSolved = GetLastBlockForAlgo(firstBlockSolved, algo);
         }
 
-        if(firstBlockSolved == null)
+        if(firstBlockSolved == null)  // this could be because checkpoints are being used
         {
-            verifyDifficulty(proofOfWorkLimit, nextBlock);
+            if(storedPrev.getHeight() < CoinDefinition.getIntervalCheckpoints())
+                verifyDifficulty(proofOfWorkLimit, nextBlock);
             return;
         }
 
