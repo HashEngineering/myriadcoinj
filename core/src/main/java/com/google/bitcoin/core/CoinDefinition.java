@@ -121,6 +121,8 @@ public class CoinDefinition {
             "seed2.myriadcoin.org",
             "seed3.myriadcoin.org",
             "seed4.myriadcoin.org",
+            "85.195.118.163",
+            "theblockexplorer.com"
     };
 
     public static int minBroadcastConnections = 1;   //0 for default; we need more peers.
