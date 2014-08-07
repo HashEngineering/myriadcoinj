@@ -38,7 +38,7 @@ public class Groestl {
         }
         catch(UnsatisfiedLinkError x)
         {
-
+            native_library_loaded = false;
         }
         catch(Exception e)
         {
@@ -66,7 +66,7 @@ public class Groestl {
         return groestl(input);
     }
 
-    static native byte [] skein_native(byte [] input, int offset, int len);
+    static native byte [] groestl_native(byte [] input, int offset, int len);
 
     static byte [] groestl(byte header[])
     {

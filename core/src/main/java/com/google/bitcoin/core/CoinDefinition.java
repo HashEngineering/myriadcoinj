@@ -29,10 +29,10 @@ public class CoinDefinition {
     public static final CoinPrecision coinPrecision = CoinPrecision.Coins;
 
 
-    public static final String BLOCKEXPLORER_BASE_URL_PROD = "http://explorerino.com/";    //blockr.io
-    public static final String BLOCKEXPLORER_ADDRESS_PATH = "address/";             //blockr.io path
-    public static final String BLOCKEXPLORER_TRANSACTION_PATH = "tx/";              //blockr.io path
-    public static final String BLOCKEXPLORER_BLOCK_PATH = "block/";                 //blockr.io path
+    public static final String BLOCKEXPLORER_BASE_URL_PROD = "http://myriad.thwg.org/";    //block explorer
+    public static final String BLOCKEXPLORER_ADDRESS_PATH = "address/";             //block explorer address path
+    public static final String BLOCKEXPLORER_TRANSACTION_PATH = "tx/";              //block explorer transaction path
+    public static final String BLOCKEXPLORER_BLOCK_PATH = "block/";                 //block explorer block path
     public static final String BLOCKEXPLORER_BASE_URL_TEST = BLOCKEXPLORER_BASE_URL_PROD;
 
     public static final String DONATION_ADDRESS = "MGjuxMt4XpPiX5a6TjVvSFdP83BnapkQFY";  //HashEngineering donation DGC address
@@ -197,6 +197,8 @@ public class CoinDefinition {
         checkpoints.put(112567, new Sha256Hash("000000000000018c0621bf32ab33d3ca871509f406f08be6dd20facea747b099"));
         checkpoints.put(141845, new Sha256Hash("00000000000000f62d14d55c2bc3ec0ba94e4f2b3868bbe7be9cb5b681fcc0fb"));
         checkpoints.put(149540, new Sha256Hash("000000000000061b8f5b8653fe13b5e453347d9386d43d09445ee5e26a8222bb"));
+        checkpoints.put(348178, new Sha256Hash("0000000000000a410c6aff939087769e757132098fa0b0ce89f11d68f935077d"));
+        checkpoints.put(431747, new Sha256Hash("000000000000065616abeccd681f7b4d6d7bed06deef0e1a6e70c905edae3692"));
 
     }
 
