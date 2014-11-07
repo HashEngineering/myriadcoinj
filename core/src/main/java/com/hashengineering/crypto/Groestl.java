@@ -8,7 +8,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * Created by Hash Engineering on 4/24/14 for the X11 algorithm
+ * Created by Hash Engineering on 4/24/14 for the Groestl algorithm
  */
 public class Groestl {
 
@@ -33,7 +33,7 @@ public class Groestl {
             }
 
         try {
-            System.loadLibrary("skein");
+            System.loadLibrary("myriad");
             native_library_loaded = true;
         }
         catch(UnsatisfiedLinkError x)

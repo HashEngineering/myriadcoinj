@@ -7,7 +7,7 @@
 #include <jni.h>
 
 
-jbyteArray JNICALL hash11_native(JNIEnv *env, jclass cls, jbyteArray header)
+jbyteArray JNICALL groestl_native(JNIEnv *env, jclass cls, jbyteArray header)
 {
     jint Plen = (env)->GetArrayLength(header);
     jbyte *P = (env)->GetByteArrayElements(header, NULL);
@@ -18,24 +18,6 @@ jbyteArray JNICALL hash11_native(JNIEnv *env, jclass cls, jbyteArray header)
 	{
 	
 	uint256 result = Hash9(P, P+Plen);
-
-    /*if (crypto_scrypt((uint8_t *) P, Plen, (uint8_t *) S, Slen, N, r, p, buf, dkLen)) {
-        jclass e = (*env)->FindClass(env, "java/lang/IllegalArgumentException");
-        char *msg;
-        switch (errno) {
-            case EINVAL:
-                msg = "N must be a power of 2 greater than 1";
-                break;
-            case EFBIG:
-            case ENOMEM:
-                msg = "Insufficient memory available";
-                break;
-            default:
-                msg = "Memory allocation failed";
-        }
-        (*env)->ThrowNew(env, e, msg);
-        goto cleanup;
-    }*/
 
     DK = (env)->NewByteArray(32);
     if (DK)
@@ -50,8 +32,14 @@ jbyteArray JNICALL hash11_native(JNIEnv *env, jclass cls, jbyteArray header)
     return DK;
 }
 
-static const JNINativeMethod methods[] = {
-    { "x11_native", "([B)[B", (void *) hash9_native }
+static const JNINativeMethod groestl_methods[] = {
+    { "groestl_native", "([B)[B", (void *) groestl_native }
+};
+static const JNINativeMethod skein_methods[] = {
+    { "groestl_native", "([B)[B", (void *) groestl_native }
+};
+static const JNINativeMethod skein_methods[] = {
+    { "qubit_native", "([B)[B", (void *) groestl_native }
 };
 
 jint JNI_OnLoad(JavaVM *vm, void *reserved) {
@@ -61,7 +49,7 @@ jint JNI_OnLoad(JavaVM *vm, void *reserved) {
         return -1;
     }
 
-    jclass cls = (env)->FindClass("com/hashengineering/crypto/X11");
+    jclass cls = (env)->FindClass("com/hashengineering/crypto/Groestl");
     int r = (env)->RegisterNatives(cls, methods, 1);
 
     return (r == JNI_OK) ? JNI_VERSION_1_6 : -1;

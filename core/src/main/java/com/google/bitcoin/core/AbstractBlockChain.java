@@ -369,7 +369,7 @@ public abstract class AbstractBlockChain {
             // Prove the block is internally valid: hash is lower than target, etc. This only checks the block contents
             // if there is a tx sending or receiving coins using an address in one of our wallets. And those transactions
             // are only lightly verified: presence in a valid connecting block is taken as proof of validity. See the
-            // article here for more details: http://code.google.com/p/bitcoincoinj/wiki/SecurityModel
+            // article here for more details: http://code.google.com/p/bitcoinj/wiki/SecurityModel
             try {
                 block.verifyHeader();
                 if (contentsImportant)
@@ -392,6 +392,29 @@ public abstract class AbstractBlockChain {
                 orphanBlocks.put(block.getHash(), new OrphanBlock(block, filteredTxHashList, filteredTxn));
                 return false;
             } else {
+                // version 0.9.2.5 - after block 740,000 do not allow more than 6 blocks in a row of the same algo
+                if ( (params.getId().equals(NetworkParameters.ID_TESTNET) && (storedPrev.getHeight()+1 > 200))
+                        || (storedPrev.getHeight()+1 > CoinDefinition.nBlockSequentialAlgoRuleStart) )
+                {
+                    int nAlgo = block.getAlgo();
+                    int nAlgoCount = 1;
+                    StoredBlock prev = storedPrev;
+                    while (prev != null && (nAlgoCount <= CoinDefinition.nBlockSequentialAlgoMaxCount))
+                    {
+                        if (prev.getHeader().getAlgo() != nAlgo)
+                            break;
+                        nAlgoCount++;
+                        prev = prev.getPrev(blockStore);
+                    }
+                    if ((storedPrev.getHeight()+1 > CoinDefinition.nBlockSequentialAlgoRuleStart2) && (nAlgoCount > CoinDefinition.nBlockSequentialAlgoMaxCount2))
+                    {
+                        throw new VerificationException("add() : too many blocks from same algo (more than 3)");
+                    } else
+                    if (nAlgoCount > CoinDefinition.nBlockSequentialAlgoMaxCount)
+                    {
+                        throw new VerificationException("add() : too many blocks from same algo (more than 6)");
+                    }
+                }
                 // It connects to somewhere on the chain. Not necessarily the top of the best known chain.
                 checkDifficultyTransitions(storedPrev, block);
                 connectBlock(block, storedPrev, shouldVerifyTransactions(), filteredTxHashList, filteredTxn);
@@ -449,7 +472,7 @@ public abstract class AbstractBlockChain {
             //
             // Note that we send the transactions to the wallet FIRST, even if we're about to re-organize this block
             // to become the new best chain head. This simplifies handling of the re-org in the Wallet class.
-            StoredBlock newBlock = storedPrev.build(block);
+            StoredBlock newBlock = storedPrev.build(block, blockStore);
             boolean haveNewBestChain = newBlock.moreWorkThan(head);
             if (haveNewBestChain) {
                 log.info("Block is causing a re-organize");
@@ -841,27 +864,137 @@ public abstract class AbstractBlockChain {
 
         }
 
+        // find previous block with same algo
         StoredBlock lastBlockSolved = GetLastBlockForAlgo(storedPrev, algo);
+        StoredBlock firstBlockSolved = null;
 
-        StoredBlock firstBlockSolved = lastBlockSolved;
 
-        for (int i = 0; firstBlockSolved != null && i < CoinDefinition.nAveragingInterval - 1; ++i)
+        final int nBlockTimeWarpPreventStart = 740500;
+        final int nBlockSequentialAlgoRuleStart2 = 766000; // block where sequential algo rule starts
+        if (storedPrev.getHeight() >= CoinDefinition.nBlockTimeWarpPreventStart2)
         {
-            firstBlockSolved = firstBlockSolved.getPrev(blockStore);
-            firstBlockSolved = GetLastBlockForAlgo(firstBlockSolved, algo);
-        }
+            // find first block in averaging interval
+            // Go back by what we want to be nAveragingInterval blocks
+            firstBlockSolved = lastBlockSolved;
+            for (int i = 0; firstBlockSolved != null && i < CoinDefinition.nAveragingInterval - 1; i++)
+            {
+                firstBlockSolved = firstBlockSolved.getPrev(blockStore);
+                firstBlockSolved = GetLastBlockForAlgo(firstBlockSolved, algo);
+            }
 
-        if(firstBlockSolved == null)  // this could be because checkpoints are being used
+            if(firstBlockSolved == null)  // this could be because checkpoints are being used
+            {
+                if(storedPrev.getHeight() < CoinDefinition.getIntervalCheckpoints())
+                    verifyDifficulty(proofOfWorkLimit, nextBlock);
+                return;
+            }
+
+            StoredBlock firstBlockPrev;
+            for ( ;; )
+            {
+                // check blocks before first block for time warp
+                firstBlockPrev = firstBlockSolved.getPrev(blockStore);
+
+                if(firstBlockSolved == null)  // this could be because checkpoints are being used
+                {
+                    if(storedPrev.getHeight() < CoinDefinition.getIntervalCheckpoints())
+                        verifyDifficulty(proofOfWorkLimit, nextBlock);
+                    return;
+                }
+                firstBlockPrev = GetLastBlockForAlgo(firstBlockPrev, algo);
+                if(firstBlockPrev == null)  // this could be because checkpoints are being used
+                {
+                    if(storedPrev.getHeight() < CoinDefinition.getIntervalCheckpoints())
+                        verifyDifficulty(proofOfWorkLimit, nextBlock);
+                    return;
+                }
+                // take previous block if block times are out of order
+                if (firstBlockPrev.getHeader().getTimeSeconds() > firstBlockSolved.getHeader().getTimeSeconds())
+                {
+                    log.info("  First blocks out of order times, swapping:   %d   %d\n", firstBlockPrev.getHeader().getTimeSeconds(), firstBlockSolved.getHeader().getTimeSeconds());
+                    firstBlockSolved = firstBlockPrev;
+                }
+                else
+                    break;
+            }
+        }
+        else if (storedPrev.getHeight() >= nBlockTimeWarpPreventStart)
         {
-            if(storedPrev.getHeight() < CoinDefinition.getIntervalCheckpoints())
-                verifyDifficulty(proofOfWorkLimit, nextBlock);
-            return;
-        }
+            firstBlockSolved = lastBlockSolved;
+            for (int i = 0; firstBlockSolved != null && i < CoinDefinition.nAveragingInterval - 1; i++)
+            {
+                firstBlockSolved = firstBlockSolved.getPrev(blockStore);
+                firstBlockSolved = GetLastBlockForAlgo(firstBlockSolved, algo);
+            }
+            if(firstBlockSolved == null)  // this could be because checkpoints are being used
+            {
+                if(storedPrev.getHeight() < CoinDefinition.getIntervalCheckpoints())
+                    verifyDifficulty(proofOfWorkLimit, nextBlock);
+                return;
+            }
 
+            // check block before first block for time warp
+            StoredBlock firstBlockPrev = firstBlockSolved.getPrev(blockStore);
+            if(firstBlockSolved == null)  // this could be because checkpoints are being used
+            {
+                if(storedPrev.getHeight() < CoinDefinition.getIntervalCheckpoints())
+                    verifyDifficulty(proofOfWorkLimit, nextBlock);
+                return;
+            }
+            firstBlockPrev = GetLastBlockForAlgo(firstBlockPrev, algo);
+
+            if(firstBlockPrev == null)  // this could be because checkpoints are being used
+            {
+                if(storedPrev.getHeight() < CoinDefinition.getIntervalCheckpoints())
+                    verifyDifficulty(proofOfWorkLimit, nextBlock);
+                return;
+            }
+            // take previous block if block times are out of order
+            if (firstBlockPrev.getHeader().getTimeSeconds() > firstBlockSolved.getHeader().getTimeSeconds())
+            {
+                log.info("  First blocks out of order times, swapping:   %d   %d\n", firstBlockPrev.getHeader().getTimeSeconds(), firstBlockSolved.getHeader().getTimeSeconds());
+                firstBlockSolved = firstBlockPrev;
+            }
+        }
+        else
+        {
+            firstBlockSolved = lastBlockSolved;
+            for (int i = 0; firstBlockSolved != null && i < CoinDefinition.nAveragingInterval - 1; ++i)
+            {
+                firstBlockSolved = firstBlockSolved.getPrev(blockStore);
+                firstBlockSolved = GetLastBlockForAlgo(firstBlockSolved, algo);
+            }
+
+            if(firstBlockSolved == null)  // this could be because checkpoints are being used
+            {
+                if(storedPrev.getHeight() < CoinDefinition.getIntervalCheckpoints())
+                    verifyDifficulty(proofOfWorkLimit, nextBlock);
+                return;
+            }
+        }
         long nActualTimespan = lastBlockSolved.getHeader().getTimeSeconds() - firstBlockSolved.getHeader().getTimeSeconds();
 
-        if (nActualTimespan < CoinDefinition.nMinActualTimespan)
-            nActualTimespan = CoinDefinition.nMinActualTimespan;
+        // Time warp mitigation: Don't adjust difficulty if time is negative
+        if ( (storedPrev.getHeight() >= nBlockTimeWarpPreventStart) &&
+                    (storedPrev.getHeight() < CoinDefinition.nBlockTimeWarpPreventStart2) )
+        {
+            if (nActualTimespan < 0)
+            {
+                log.info("  nActualTimespan negative %d\n", nActualTimespan);
+                log.info("  Keeping: %08x  %s\n", lastBlockSolved.getHeader().getDifficultyTarget(), lastBlockSolved.getHeader().getDifficultyTargetAsInteger().toString(16));
+                verifyDifficulty(lastBlockSolved.getHeader().getDifficultyTargetAsInteger(), nextBlock);
+                return;
+            }
+        }
+
+        long nMinActualTimespan;
+        if (storedPrev.getHeight() >= CoinDefinition.nBlockDiffAdjustV2)
+            nMinActualTimespan =  CoinDefinition.nMinActualTimespanV2;
+        else
+            nMinActualTimespan =  CoinDefinition.nMinActualTimespanV1;
+
+        if (nActualTimespan < nMinActualTimespan)
+            nActualTimespan = nMinActualTimespan;
         if (nActualTimespan > CoinDefinition.nMaxActualTimespan)
             nActualTimespan = CoinDefinition.nMaxActualTimespan;
 

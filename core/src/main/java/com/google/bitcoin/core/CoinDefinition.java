@@ -55,9 +55,13 @@ public class CoinDefinition {
     static final long nAveragingTargetTimespan = nAveragingInterval * TARGET_SPACING; // 25 minutes
 
     static final long nMaxAdjustDown = 4; // 4% adjustment down
-    static final long nMaxAdjustUp = 2; // 2% adjustment up
+    //static final long nMaxAdjustUp = 2; // 2% adjustment up
+    static final long nMaxAdjustUpV1 = 2; // 2% adjustment up
+    static final long nMaxAdjustUpV2 = 4; // 4% adjustment up
 
-    static final long nMinActualTimespan = nAveragingTargetTimespan * (100 - nMaxAdjustUp) / 100;
+    //static final long nMinActualTimespan = nAveragingTargetTimespan * (100 - nMaxAdjustUp) / 100;
+    static final long nMinActualTimespanV1 = nAveragingTargetTimespan * (100 - nMaxAdjustUpV1) / 100;
+    static final long nMinActualTimespanV2 = nAveragingTargetTimespan * (100 - nMaxAdjustUpV2) / 100;
     static final long nMaxActualTimespan = nAveragingTargetTimespan * (100 + nMaxAdjustDown) / 100;
 
     public static final int getInterval(int height, boolean testNet) {
@@ -74,6 +78,17 @@ public class CoinDefinition {
     {
        return proofOfWorkLimits[algo];
     }
+    public static final int nBlockAlgoWorkWeightStart = 142000;
+    public static final int nBlockSequentialAlgoRuleStart = 740000;
+    public static final int nBlockAlgoNormalisedWorkStart = 740000;
+    public static final int nBlockSequentialAlgoMaxCount = 6;
+
+    public static final int nBlockSequentialAlgoMaxCount2 = 3; // maximum sequential blocks of same algo
+    public static final int nBlockSequentialAlgoRuleStart2 = 766000; // block where sequential algo rule starts
+    public static final int nBlockTimeWarpPreventStart = 740500; // block where time warp 1 prevention starts
+    public static final int nBlockTimeWarpPreventStart2 = 766000; // block where time warp 2 prevention starts
+    public static final int nBlockDiffAdjustV2 = 766000; // block where difficulty adjust V2 starts
+
 
     public static int spendableCoinbaseDepth = 100; //main.h: static const int COINBASE_MATURITY
     public static final BigInteger MAX_MONEY = BigInteger.valueOf(2000000000).multiply(Utils.COIN);                 //main.h:  MAX_MONEY

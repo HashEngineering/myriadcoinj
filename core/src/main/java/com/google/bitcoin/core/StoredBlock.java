@@ -105,6 +105,13 @@ public class StoredBlock implements Serializable {
         int height = this.height + 1;
         return new StoredBlock(block, chainWork, height);
     }
+    public StoredBlock build(Block block, BlockStore blockStore) throws VerificationException {
+        // Stored blocks track total work done in this chain, because the canonical chain is the one that represents
+        // the largest amount of work done not the tallest.
+        BigInteger chainWork = this.chainWork.add(/*block.getWork()*/getWorkAdjusted(blockStore));
+        int height = this.height + 1;
+        return new StoredBlock(block, chainWork, height);
+    }
 
     /**
      * Given a block store, looks up the previous block in this chain. Convenience method for doing
@@ -147,5 +154,79 @@ public class StoredBlock implements Serializable {
     public String toString() {
         return String.format("Block %s at height %d: %s",
                 getHeader().getHashAsString(), getHeight(), getHeader().toString());
+    }
+
+    int getAlgoWorkFactor()
+    {
+        if (getHeader().params.getId().equals(NetworkParameters.ID_TESTNET) && (height < CoinDefinition.nBlockAlgoWorkWeightStart))
+        {
+            return 1;
+        }
+        if (getHeader().params.getId().equals(NetworkParameters.ID_TESTNET) && (height < 100))
+        {
+            return 1;
+        }
+        switch (getHeader().getAlgo())
+        {
+            case Block.ALGO_SHA256D:
+                return 1;
+            // work factor = absolute work ratio * optimisation factor
+            case Block.ALGO_SCRYPT:
+                return 1024 * 4;
+            case Block.ALGO_GROESTL:
+                return 64 * 8;
+            case Block.ALGO_SKEIN:
+                return 4 * 6;
+            case Block.ALGO_QUBIT:
+                return 128 * 8;
+            default:
+                return 1;
+        }
+    }
+    BigInteger getPrevWorkForAlgo(int algo, BlockStore blockStore)
+    {
+        //BigInteger nWork;
+        try {
+            StoredBlock cursor = getPrev(blockStore);
+            while (cursor != null)
+            {
+                if (cursor.getHeader().getAlgo() == algo)
+                {
+                    return cursor.getHeader().getWork();
+                }
+                cursor = cursor.getPrev(blockStore);
+            }
+        }
+        catch(BlockStoreException x)
+        {
+
+        }
+        return CoinDefinition.getProofOfWorkLimit(algo);
+    }
+
+    BigInteger getWorkAdjusted(BlockStore blockStore)
+    {
+        BigInteger bnRes;
+        if ((getHeader().params.getId().equals(NetworkParameters.ID_TESTNET) && (height > 500)) ||
+                (height >= CoinDefinition.nBlockAlgoNormalisedWorkStart))
+        {
+            // Adjusted block work is the sum of work of this block and the
+            // most recent work of one block of each algo
+            BigInteger nBlockWork = getHeader().getWork();
+            int nAlgo = getHeader().getAlgo();
+            for (int algo = 0; algo < Block.NUM_ALGOS; algo++)
+            {
+                if (algo != nAlgo)
+                {
+                    nBlockWork = nBlockWork.add(getPrevWorkForAlgo(algo, blockStore));
+                }
+            }
+            bnRes = nBlockWork.divide(BigInteger.valueOf(Block.NUM_ALGOS));
+        }
+        else
+        {
+            bnRes = getHeader().getWork().multiply(BigInteger.valueOf(getAlgoWorkFactor()));
+        }
+        return bnRes;
     }
 }

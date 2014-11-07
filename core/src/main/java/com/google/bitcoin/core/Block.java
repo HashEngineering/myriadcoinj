@@ -1218,4 +1218,6 @@ public class Block extends Message {
     String [] algoNames = {"sha256d", "scrypt", "groestl", "skein", "qubit"};
 
     public String getAlgoName() { return algoNames[GetAlgo(version)]; }
+
+
 }

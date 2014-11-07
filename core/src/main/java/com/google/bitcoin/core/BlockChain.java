@@ -67,7 +67,7 @@ public class BlockChain extends AbstractBlockChain {
     @Override
     protected StoredBlock addToBlockStore(StoredBlock storedPrev, Block blockHeader, TransactionOutputChanges txOutChanges)
             throws BlockStoreException, VerificationException {
-        StoredBlock newBlock = storedPrev.build(blockHeader);
+        StoredBlock newBlock = storedPrev.build(blockHeader, blockStore);
         blockStore.put(newBlock);
         return newBlock;
     }
@@ -75,7 +75,7 @@ public class BlockChain extends AbstractBlockChain {
     @Override
     protected StoredBlock addToBlockStore(StoredBlock storedPrev, Block blockHeader)
             throws BlockStoreException, VerificationException {
-        StoredBlock newBlock = storedPrev.build(blockHeader);
+        StoredBlock newBlock = storedPrev.build(blockHeader, blockStore);
         blockStore.put(newBlock);
         return newBlock;
     }
