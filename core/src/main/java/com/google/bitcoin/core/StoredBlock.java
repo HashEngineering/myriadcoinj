@@ -46,11 +46,14 @@ public class StoredBlock implements Serializable {
     private Block header;
     private BigInteger chainWork;
     private int height;
+    BigInteger nAlgoWork[] = new BigInteger[Block.NUM_ALGOS];
 
     public StoredBlock(Block header, BigInteger chainWork, int height) {
         this.header = header;
         this.chainWork = chainWork;
         this.height = height;
+        for(int i = 0; i < Block.NUM_ALGOS; ++i)
+            nAlgoWork[i] = BigInteger.ZERO;
     }
 
     /**
@@ -76,9 +79,33 @@ public class StoredBlock implements Serializable {
         return height;
     }
 
+    //class CBlockIndexWorkComparator
+    //{
+        static public boolean BlockIndexWorkComparator(StoredBlock pa, StoredBlock pb)
+        {
+            // First sort by most total work, ...
+            if (pa.getChainWork().compareTo(pb.getChainWork()) > 0) return false;
+            if (pa.getChainWork().compareTo(pb.getChainWork()) < 0) return true;
+
+            // ... then by earliest time received, ...
+            if (pa.getHeader().sequenceId < pb.getHeader().sequenceId) return false;
+            if (pa.getHeader().sequenceId > pb.getHeader().sequenceId) return true;
+
+            // Use pointer address as tie breaker (should only happen with blocks
+            // loaded from disk, as those all have id 0).
+
+            if (pa.hashCode() < pb.hashCode()) return false;
+            if (pa.hashCode() > pb.hashCode()) return true;
+
+            // Identical blocks.
+            return false;
+        }
+    //};
+
     /** Returns true if this objects chainWork is higher than the others. */
     public boolean moreWorkThan(StoredBlock other) {
-        return chainWork.compareTo(other.chainWork) > 0;
+        //return chainWork.compareTo(other.chainWork) > 0;
+        return BlockIndexWorkComparator(this, other);
     }
 
     @Override
@@ -108,9 +135,19 @@ public class StoredBlock implements Serializable {
     public StoredBlock build(Block block, BlockStore blockStore) throws VerificationException {
         // Stored blocks track total work done in this chain, because the canonical chain is the one that represents
         // the largest amount of work done not the tallest.
+
+
         BigInteger chainWork = this.chainWork.add(/*block.getWork()*/getWorkAdjusted(blockStore));
         int height = this.height + 1;
+        initAlgoWork(block, blockStore);
         return new StoredBlock(block, chainWork, height);
+    }
+    void initAlgoWork(Block block, BlockStore blockStore)
+    {
+        for (int i = 0; i < Block.NUM_ALGOS; i++)
+        {
+                nAlgoWork[i] = this.nAlgoWork[i].add(i == this.getHeader().getAlgo() ? block.getWork() : BigInteger.ZERO);
+        }
     }
 
     /**
@@ -204,6 +241,37 @@ public class StoredBlock implements Serializable {
         return CoinDefinition.getProofOfWorkLimit(algo);
     }
 
+    BigInteger getPrevWorkForAlgoWithDecay(int algo, BlockStore blockStore)
+    {
+        int nDistance = 0;
+
+        try {
+            StoredBlock cursor = getPrev(blockStore);
+            while (cursor != null)
+            {
+                if(nDistance > 32)
+                {
+                    return CoinDefinition.getProofOfWorkLimit(algo);
+                }
+                if (cursor.getHeader().getAlgo() == algo)
+                {
+                    BigInteger work = cursor.getHeader().getWork();
+                    work = work.multiply(BigInteger.valueOf(32 - nDistance));
+                    work = work.divide(BigInteger.valueOf(32));
+                    if (work.compareTo(CoinDefinition.getProofOfWorkLimit(algo)) < 0)
+                        work = CoinDefinition.getProofOfWorkLimit(algo);
+                    return work;
+                }
+                cursor = cursor.getPrev(blockStore);
+            }
+        }
+        catch(BlockStoreException x)
+        {
+
+        }
+                return CoinDefinition.getProofOfWorkLimit(algo);
+            }
+
     BigInteger getWorkAdjusted(BlockStore blockStore)
     {
         BigInteger bnRes;
@@ -218,7 +286,10 @@ public class StoredBlock implements Serializable {
             {
                 if (algo != nAlgo)
                 {
-                    nBlockWork = nBlockWork.add(getPrevWorkForAlgo(algo, blockStore));
+                    if (height >= CoinDefinition.nBlockAlgoNormalisedWorkStart2)
+                        nBlockWork = nBlockWork.add(getPrevWorkForAlgoWithDecay(algo, blockStore));
+                    else
+                        nBlockWork = nBlockWork.add(getPrevWorkForAlgo(algo, blockStore));
                 }
             }
             bnRes = nBlockWork.divide(BigInteger.valueOf(Block.NUM_ALGOS));

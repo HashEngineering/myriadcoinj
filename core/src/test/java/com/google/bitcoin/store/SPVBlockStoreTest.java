@@ -45,7 +45,7 @@ public class SPVBlockStoreTest {
 
 
         // Build a new block.
-        StoredBlock b1 = genesis.build(genesis.getHeader().createNextBlock(to).cloneAsHeader());
+        StoredBlock b1 = genesis.build(genesis.getHeader().createNextBlock(to).cloneAsHeader(), store);
         store.put(b1);
         store.setChainHead(b1);
         store.close();

@@ -166,7 +166,7 @@ public class TestUtils {
             b.solve();
             BlockPair pair = new BlockPair();
             pair.block = b;
-            pair.storedBlock = blockStore.getChainHead().build(b);
+            pair.storedBlock = blockStore.getChainHead().build(b, blockStore);
             blockStore.put(pair.storedBlock);
             blockStore.setChainHead(pair.storedBlock);
             return pair;

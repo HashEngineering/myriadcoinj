@@ -85,6 +85,7 @@ public class CoinDefinition {
 
     public static final int nBlockSequentialAlgoMaxCount2 = 3; // maximum sequential blocks of same algo
     public static final int nBlockSequentialAlgoRuleStart2 = 766000; // block where sequential algo rule starts
+    public static final int nBlockAlgoNormalisedWorkStart2 = 866000;
     public static final int nBlockTimeWarpPreventStart = 740500; // block where time warp 1 prevention starts
     public static final int nBlockTimeWarpPreventStart2 = 766000; // block where time warp 2 prevention starts
     public static final int nBlockDiffAdjustV2 = 766000; // block where difficulty adjust V2 starts

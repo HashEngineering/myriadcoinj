@@ -105,6 +105,8 @@ public class Block extends Message {
     // of the size of the ideal encoding in addition to the actual message size (which Message needs)
     private transient int optimalEncodingMessageSize;
 
+    public long sequenceId;
+
     /** Special case constructor, used for the genesis node, cloneAsHeader and unit tests. */
     Block(NetworkParameters params) {
         super(params);

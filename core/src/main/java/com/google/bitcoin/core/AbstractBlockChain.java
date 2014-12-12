@@ -136,6 +136,8 @@ public abstract class AbstractBlockChain {
     private double falsePositiveTrend;
     private double previousFalsePositiveRate;
 
+    private static int nBlockSequenceId = 1;
+
 
     /**
      * Constructs a BlockChain connected to the given list of listeners (eg, wallets) and a store.
@@ -472,6 +474,7 @@ public abstract class AbstractBlockChain {
             //
             // Note that we send the transactions to the wallet FIRST, even if we're about to re-organize this block
             // to become the new best chain head. This simplifies handling of the re-org in the Wallet class.
+            block.sequenceId = ++nBlockSequenceId;
             StoredBlock newBlock = storedPrev.build(block, blockStore);
             boolean haveNewBestChain = newBlock.moreWorkThan(head);
             if (haveNewBestChain) {
