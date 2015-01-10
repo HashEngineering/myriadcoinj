@@ -1,9 +1,7 @@
 package com.google.bitcoin.core;
 
 import java.math.BigInteger;
-import java.util.Date;
 import java.util.Map;
-import java.util.Vector;
 
 /**
  * Created with IntelliJ IDEA.

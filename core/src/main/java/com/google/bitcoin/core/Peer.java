@@ -375,6 +375,18 @@ public class Peer extends PeerSocketHandler {
                 vPeerVersionMessage.localServices,
                 String.format("%tF %tT", peerTime, peerTime),
                 vPeerVersionMessage.bestHeight);
+
+        if(vPeerVersionMessage.subVer.equals("/Satoshi:0.9.2.3/") ||
+                vPeerVersionMessage.subVer.equals("/Satoshi:0.9.2.4/") ||
+                vPeerVersionMessage.subVer.equals("/Satoshi:0.9.2.5/") ||
+                vPeerVersionMessage.subVer.equals("/Satoshi:0.9.2.6/") ||
+                vPeerVersionMessage.subVer.equals("/Satoshi:0.9.2.7/") ||
+                vPeerVersionMessage.subVer.equals("/Satoshi:0.9.2.8/") ||
+                vPeerVersionMessage.subVer.equals("/Satoshi:0.9.2.9/"))
+        {
+            throw new ProtocolException("Rejecting old versions of the myriadcoin client");
+        }
+
         // Now it's our turn ...
         // Send an ACK message stating we accept the peers protocol version.
         sendMessage(new VersionAck());

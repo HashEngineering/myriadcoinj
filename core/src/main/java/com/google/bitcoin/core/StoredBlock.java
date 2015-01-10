@@ -40,8 +40,11 @@ public class StoredBlock implements Serializable {
     // A BigInteger representing the total amount of work done so far on this chain. As of May 2011 it takes 8
     // bytes to represent this field, so 12 bytes should be plenty for now.
     public static final int CHAIN_WORK_BYTES = 12;
+    public static final int CHAIN_WORK_BYTES2 = 16;
     public static final byte[] EMPTY_BYTES = new byte[CHAIN_WORK_BYTES];
+    public static final byte[] EMPTY_BYTES2 = new byte[CHAIN_WORK_BYTES2];
     public static final int COMPACT_SERIALIZED_SIZE = Block.HEADER_SIZE + CHAIN_WORK_BYTES + 4;  // for height
+    public static final int COMPACT_SERIALIZED_SIZE2 = Block.HEADER_SIZE + CHAIN_WORK_BYTES2 + 4;  // for height
 
     private Block header;
     private BigInteger chainWork;
@@ -104,8 +107,9 @@ public class StoredBlock implements Serializable {
 
     /** Returns true if this objects chainWork is higher than the others. */
     public boolean moreWorkThan(StoredBlock other) {
-        //return chainWork.compareTo(other.chainWork) > 0;
-        return BlockIndexWorkComparator(this, other);
+        if(height < CoinDefinition.nBlockAlgoNormalisedWorkStart)
+            return chainWork.compareTo(other.chainWork) > 0;
+        else return BlockIndexWorkComparator(this, other);
     }
 
     @Override
@@ -125,13 +129,13 @@ public class StoredBlock implements Serializable {
     /**
      * Creates a new StoredBlock, calculating the additional fields by adding to the values in this block.
      */
-    public StoredBlock build(Block block) throws VerificationException {
+    /*public StoredBlock build(Block block) throws VerificationException {
         // Stored blocks track total work done in this chain, because the canonical chain is the one that represents
         // the largest amount of work done not the tallest.
         BigInteger chainWork = this.chainWork.add(block.getWork());
         int height = this.height + 1;
         return new StoredBlock(block, chainWork, height);
-    }
+    }*/
     public StoredBlock build(Block block, BlockStore blockStore) throws VerificationException {
         // Stored blocks track total work done in this chain, because the canonical chain is the one that represents
         // the largest amount of work done not the tallest.
@@ -163,7 +167,8 @@ public class StoredBlock implements Serializable {
     /** Serializes the stored block to a custom packed format. Used by {@link CheckpointManager}. */
     public void serializeCompact(ByteBuffer buffer) {
         byte[] chainWorkBytes = getChainWork().toByteArray();
-        checkState(chainWorkBytes.length <= CHAIN_WORK_BYTES, "Ran out of space to store chain work!");
+        boolean afterWorkStart2 = height > CoinDefinition.nBlockAlgoNormalisedWorkStart2;
+        checkState(chainWorkBytes.length <= CHAIN_WORK_BYTES, "Ran out of space to store chain work!  " + chainWorkBytes.length +" bytes required");
         if (chainWorkBytes.length < CHAIN_WORK_BYTES) {
             // Pad to the right size.
             buffer.put(EMPTY_BYTES, 0, CHAIN_WORK_BYTES - chainWorkBytes.length);
@@ -251,15 +256,15 @@ public class StoredBlock implements Serializable {
             {
                 if(nDistance > 32)
                 {
-                    return CoinDefinition.getProofOfWorkLimit(algo);
+                    return BigInteger.ZERO;//CoinDefinition.getProofOfWorkLimit(algo);
                 }
                 if (cursor.getHeader().getAlgo() == algo)
                 {
                     BigInteger work = cursor.getHeader().getWork();
                     work = work.multiply(BigInteger.valueOf(32 - nDistance));
                     work = work.divide(BigInteger.valueOf(32));
-                    if (work.compareTo(CoinDefinition.getProofOfWorkLimit(algo)) < 0)
-                        work = CoinDefinition.getProofOfWorkLimit(algo);
+                    //if (work.compareTo(CoinDefinition.getProofOfWorkLimit(algo)) < 0)
+                    //    work = CoinDefinition.getProofOfWorkLimit(algo);
                     return work;
                 }
                 cursor = cursor.getPrev(blockStore);
@@ -269,7 +274,7 @@ public class StoredBlock implements Serializable {
         {
 
         }
-                return CoinDefinition.getProofOfWorkLimit(algo);
+                return BigInteger.ZERO;
             }
 
     BigInteger getWorkAdjusted(BlockStore blockStore)
