@@ -874,7 +874,8 @@ public abstract class AbstractBlockChain {
 
         final int nBlockTimeWarpPreventStart = 740500;
         final int nBlockSequentialAlgoRuleStart2 = 766000; // block where sequential algo rule starts
-        if (storedPrev.getHeight() >= CoinDefinition.nBlockTimeWarpPreventStart2)
+        if ((storedPrev.getHeight() >= CoinDefinition.nBlockTimeWarpPreventStart2) &&
+                (storedPrev.getHeight() < CoinDefinition.nBlockTimeWarpPreventStart3))
         {
             // find first block in averaging interval
             // Go back by what we want to be nAveragingInterval blocks
@@ -921,7 +922,8 @@ public abstract class AbstractBlockChain {
                     break;
             }
         }
-        else if (storedPrev.getHeight() >= nBlockTimeWarpPreventStart)
+        else if (storedPrev.getHeight() >= nBlockTimeWarpPreventStart &&
+                (storedPrev.getHeight() < CoinDefinition.nBlockTimeWarpPreventStart2))
         {
             firstBlockSolved = lastBlockSolved;
             for (int i = 0; firstBlockSolved != null && i < CoinDefinition.nAveragingInterval - 1; i++)
@@ -975,7 +977,12 @@ public abstract class AbstractBlockChain {
                 return;
             }
         }
-        long nActualTimespan = lastBlockSolved.getHeader().getTimeSeconds() - firstBlockSolved.getHeader().getTimeSeconds();
+        //long nActualTimespan = lastBlockSolved.getHeader().getTimeSeconds() - firstBlockSolved.getHeader().getTimeSeconds();
+        long nActualTimespan;
+        if (storedPrev.getHeight() >= CoinDefinition.nBlockTimeWarpPreventStart3)
+            nActualTimespan = getMedianTimestampOfRecentBlocks(lastBlockSolved, blockStore) - getMedianTimestampOfRecentBlocks(firstBlockSolved, blockStore);
+        else
+            nActualTimespan = lastBlockSolved.getHeader().getTimeSeconds() - firstBlockSolved.getHeader().getTimeSeconds();
 
         // Time warp mitigation: Don't adjust difficulty if time is negative
         if ( (storedPrev.getHeight() >= nBlockTimeWarpPreventStart) &&

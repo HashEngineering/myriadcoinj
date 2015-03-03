@@ -86,6 +86,7 @@ public class CoinDefinition {
     public static final int nBlockAlgoNormalisedWorkStart2 = 866000;
     public static final int nBlockTimeWarpPreventStart = 740500; // block where time warp 1 prevention starts
     public static final int nBlockTimeWarpPreventStart2 = 766000; // block where time warp 2 prevention starts
+    public static final int nBlockTimeWarpPreventStart3 = 1048320; // block where time warp 3 prevention starts
     public static final int nBlockDiffAdjustV2 = 766000; // block where difficulty adjust V2 starts
 
 
@@ -213,6 +214,12 @@ public class CoinDefinition {
         checkpoints.put(149540, new Sha256Hash("000000000000061b8f5b8653fe13b5e453347d9386d43d09445ee5e26a8222bb"));
         checkpoints.put(348178, new Sha256Hash("0000000000000a410c6aff939087769e757132098fa0b0ce89f11d68f935077d"));
         checkpoints.put(431747, new Sha256Hash("000000000000065616abeccd681f7b4d6d7bed06deef0e1a6e70c905edae3692"));
+        checkpoints.put( 490168, new Sha256Hash("000000000000155ce9845e501617f152127e32c2c468edc643809f9988d30327"));
+        checkpoints.put( 557719, new Sha256Hash("0000000000000851f690d42129b34408697c88316879debd413049959517d7c6"));
+        checkpoints.put( 740001, new Sha256Hash("00000000000002c7aaa3ad688eb5af7d2779f4aa1d9a1b9a5c3cfb4ccad56caa"));
+        checkpoints.put( 740576, new Sha256Hash("00000000000043dc047538e724f17a388146f22dd2ecf66f3c88253799912f4d"));
+        checkpoints.put( 766081, new Sha256Hash("00000000000001e604a7acc2dd539ff8bd51224a7aac8647736d1af10160427d"));
+        checkpoints.put(1007712, new Sha256Hash("00000000000013e0fb1ec8ba2ce0b04b1547d9ae7d9c9e5a2691aeca87559a12"));
 
     }
 
