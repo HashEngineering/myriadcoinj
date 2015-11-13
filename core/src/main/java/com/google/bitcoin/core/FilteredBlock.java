@@ -55,9 +55,9 @@ public class FilteredBlock extends Message {
         System.arraycopy(bytes, 0, headerBytes, 0, Block.HEADER_SIZE);
         header = new Block(params, headerBytes);
         
-        merkleTree = new PartialMerkleTree(params, bytes, Block.HEADER_SIZE);
+        merkleTree = new PartialMerkleTree(params, bytes, header.getMMBlockSize() +Block.HEADER_SIZE);
         
-        length = Block.HEADER_SIZE + merkleTree.getMessageSize();
+        length = Block.HEADER_SIZE + merkleTree.getMessageSize()+header.getMMBlockSize();
     }
     
     @Override

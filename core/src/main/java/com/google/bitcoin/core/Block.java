@@ -24,7 +24,6 @@ import com.google.common.collect.ImmutableList;
 import com.hashengineering.crypto.Groestl;
 import com.hashengineering.crypto.Qubit;
 import com.hashengineering.crypto.Skein;
-import com.hashengineering.crypto.X11;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,10 +38,8 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.google.bitcoin.core.Utils.doubleDigest;
 import static com.google.bitcoin.core.Utils.doubleDigestTwoBuffers;
 import static com.google.bitcoin.core.Utils.scryptDigest;
-import com.hashengineering.crypto.*;
 
 /**
  * <p>A block is a group of transactions, and is one of the fundamental data structures of the Bitcoin system.
@@ -93,7 +90,8 @@ public class Block extends Message {
     /** Stores the hash of the block. If null, getHash() will recalculate it. */
     private transient Sha256Hash hash;
     private transient Sha256Hash scryptHash;
-
+    private transient BlockMergeMined mmBlock;
+    private transient boolean lastByteNull;
     private transient boolean headerParsed;
     private transient boolean transactionsParsed;
 
@@ -165,6 +163,12 @@ public class Block extends Message {
         this.transactions.addAll(transactions);
     }
 
+    public Block(NetworkParameters params, byte[] payloadBytes, byte[] bytes, boolean parseLazy, boolean parseRetain, int length, int cursor)
+            throws ProtocolException {
+        super(params, bytes, payloadBytes, 0, parseLazy, parseRetain, length, cursor);
+
+    }
+
 
     /**
      * <p>A utility method that calculates how much new Bitcoin would be created by the block at the given height.
@@ -200,7 +204,41 @@ public class Block extends Message {
         nonce = readUint32();
 
         hash = new Sha256Hash(Utils.reverseBytes(Utils.doubleDigest(bytes, offset, cursor)));
+        if((version & BlockMergeMined.BLOCK_VERSION_AUXPOW) > 0 && (mmBlock == null || !mmBlock.IsValid()))
+        {
+            // if the block passed in is not just the headers, but header/mminfo/transactions
+            // then payloadBytes is null so assume its in the bytes information (if bytes has more than just the header)
 
+            byte[] bytesforMMBlock = this.payloadBytes;
+            int mmCursor = this.payloadCursor;
+            if(bytesforMMBlock == null)
+            {
+                if(bytes != null && bytes.length > (Block.HEADER_SIZE+1))
+                {
+                    mmCursor = cursor;
+                    bytesforMMBlock = this.bytes;
+                }
+            }
+
+            mmBlock = new BlockMergeMined(params, bytesforMMBlock, mmCursor, this);
+
+            // first transaction byte which should be null for header only blocks
+            if(mmBlock.IsValid() && bytesforMMBlock != null && bytesforMMBlock.length > (mmCursor + mmBlock.getMessageSize()) && bytesforMMBlock[mmCursor + mmBlock.getMessageSize()] == 0 )
+            {
+                lastByteNull = true;
+            }
+        }
+        else
+        {
+            // first transaction byte which should be null for header only blocks
+            // length is only set for blocks that are passed in as headers only (80 bytes)
+            if(bytes != null && bytes.length > cursor && bytes[cursor] == 0 && length == Block.HEADER_SIZE )
+            {
+                lastByteNull = true;
+
+
+            }
+        }
         headerParsed = true;
         headerBytesValid = parseRetain;
     }
@@ -211,11 +249,15 @@ public class Block extends Message {
 
         cursor = offset + HEADER_SIZE;
         optimalEncodingMessageSize = HEADER_SIZE;
-        if (bytes.length == cursor) {
+        if (bytes.length == cursor || isLastByteNull()) {
             // This message is just a header, it has no transactions.
             transactionsParsed = true;
             transactionBytesValid = false;
             return;
+        }
+        if(isMMBlock())
+        {
+            cursor += getMMBlockSize();
         }
 
         int numTransactions = (int) readVarInt();
@@ -234,6 +276,8 @@ public class Block extends Message {
         transactionsParsed = true;
         transactionBytesValid = parseRetain;
     }
+
+
 
     void parse() throws ProtocolException {
         parseHeader();
@@ -261,7 +305,7 @@ public class Block extends Message {
             parseTransactions();
             length = cursor - offset;
         } else {
-            transactionBytesValid = !transactionsParsed || parseRetain && length > HEADER_SIZE;
+            transactionBytesValid = !transactionsParsed || parseRetain && length > (HEADER_SIZE+getMMBlockSize());
         }
         headerBytesValid = !headerParsed || parseRetain && length >= HEADER_SIZE;
     }
@@ -404,8 +448,8 @@ public class Block extends Message {
         }
 
         // confirmed we must have transactions either cached or as objects.
-        if (transactionBytesValid && bytes != null && bytes.length >= offset + length) {
-            stream.write(bytes, offset + HEADER_SIZE, length - HEADER_SIZE);
+        if (transactionBytesValid && bytes != null && bytes.length >= offset + length + getMMBlockSize()) {
+            stream.write(bytes, offset + HEADER_SIZE, length - HEADER_SIZE -  getMMBlockSize());
             return;
         }
 
@@ -631,6 +675,9 @@ public class Block extends Message {
         block.difficultyTarget = difficultyTarget;
         block.transactions = null;
         block.hash = getHash().duplicate();
+        if(mmBlock != null)
+              block.mmBlock = mmBlock.duplicate();
+        else block.mmBlock=null;
         return block;
     }
 
@@ -660,6 +707,12 @@ public class Block extends Message {
         s.append("   nonce: ");
         s.append(nonce);
         s.append("\n");
+        if(isMMBlock())
+        {
+            s.append("   Merged-mining info: \n");
+            s.append(mmBlock.toString());
+            s.append("\n");
+        }
         if (transactions != null && transactions.size() > 0) {
             s.append("   with ").append(transactions.size()).append(" transaction(s):\n");
             for (Transaction tx : transactions) {
@@ -704,6 +757,43 @@ public class Block extends Message {
         return target;
     }
 
+    Sha256Hash getPOWHash(int algo)
+    {
+        Sha256Hash h;
+        switch (algo)
+        {
+            case ALGO_SHA256D:
+                h = getHash();
+                break;
+            case ALGO_SCRYPT:
+            {
+                h = getScryptHash();
+                break;
+            }
+            case ALGO_GROESTL:
+                h = getGroestlHash();
+
+                break;
+            case ALGO_SKEIN:
+                h = getSkeinHash();
+                break;
+            case ALGO_QUBIT:
+                h = getQubitHash();
+                break;
+            default:
+                h = getHash();
+                break;
+        }
+        return h;
+    }
+
+    Sha256Hash getPOWHash()
+    {
+        int algo = getAlgo();
+        return getPOWHash(algo);
+    }
+
+
     /** Returns true if the hash of the block is OK (lower than difficulty target). */
     private boolean checkProofOfWork(boolean throwException) throws VerificationException {
         // This part is key - it is what proves the block was as difficult to make as it claims
@@ -716,38 +806,32 @@ public class Block extends Message {
         // field is of the right value. This requires us to have the preceeding blocks.
         BigInteger target = getDifficultyTargetAsInteger();
         BigInteger h = null;
-        int algo = getAlgo();
 
-            switch (algo)
+        if(time >= BlockMergeMined.MERGED_MINE_START_TIME)
+        {
+            if(mmBlock != null && mmBlock.IsValid())
             {
-                case ALGO_SHA256D:
-                    h = getHash().toBigInteger();
-                    break;
-                case ALGO_SCRYPT:
-                {
-                    h = getScryptHash().toBigInteger();
-                    break;
-                }
-                case ALGO_GROESTL:
-                    h = getGroestlHash().toBigInteger();
+                h = mmBlock.getParentBlockHash().toBigInteger();
+                mmBlock.checkProofOfWork(throwException);
 
-                    break;
-                case ALGO_SKEIN:
-                    h = getSkeinHash().toBigInteger();
-                    break;
-                case ALGO_QUBIT:
-                    h = getQubitHash().toBigInteger();
-                    break;
-                default:
-                    h = getHash().toBigInteger();
-                    break;
             }
+            else
+                h = getPOWHash().toBigInteger();
+        }
+        else
+        {
+            if(mmBlock != null && mmBlock.IsValid())
+                throw new VerificationException("Merged-mine block was found before merged-mining was turned on at time: " + BlockMergeMined.MERGED_MINE_START_TIME + "(Block 25000)");
+            h = getPOWHash().toBigInteger();
+        }
+
+
 
 
         if (h.compareTo(target) > 0) {
             // Proof of work check failed!
             if (throwException)
-                throw new VerificationException("Hash is higher than target: " + getScryptHashAsString() + " vs "
+                throw new VerificationException("Hash is higher than target: " + h.toString(16) + " vs "
                         + target.toString(16));
             else
                 return false;
@@ -1221,5 +1305,21 @@ public class Block extends Message {
 
     public String getAlgoName() { return algoNames[GetAlgo(version)]; }
 
+    public boolean isMMBlock(){
+        maybeParseHeader();
+        return ((version & BlockMergeMined.BLOCK_VERSION_AUXPOW) > 0) && mmBlock.IsValid();
+    }
+    int getMMBlockSize()
+    {
+        if(mmBlock != null)
+        {
+            return mmBlock.getMessageSize();
+        }
+        return 0;
+    }
 
+    public boolean isLastByteNull()
+    {
+        return lastByteNull;
+    }
 }

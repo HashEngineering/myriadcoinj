@@ -49,8 +49,12 @@ public class CoinDefinition {
     public static final int TARGET_SPACING = (int)(150);  // 2.5 minutes seconds per block.
     public static final int INTERVAL = TARGET_TIMESPAN / TARGET_SPACING;  //1 blocks
 
+    static final int nTargetSpacingP1 = 150; // 2.5 minutes (NUM_ALGOS * 30 seconds)
+    static final int nTargetSpacingP2 = 300; // 5 minutes (NUM_ALGOS * 60 seconds)
     static final long nAveragingInterval = 10; // 10 blocks
     static final long nAveragingTargetTimespan = nAveragingInterval * TARGET_SPACING; // 25 minutes
+    static final long nAveragingTargetTimespanP1 = nAveragingInterval * nTargetSpacingP1; // 25 minutes
+    static final long nAveragingTargetTimespanP2 = nAveragingInterval * nTargetSpacingP2; // 50 minutes
 
     static final long nMaxAdjustDown = 4; // 4% adjustment down
     //static final long nMaxAdjustUp = 2; // 2% adjustment up
@@ -61,6 +65,9 @@ public class CoinDefinition {
     static final long nMinActualTimespanV1 = nAveragingTargetTimespan * (100 - nMaxAdjustUpV1) / 100;
     static final long nMinActualTimespanV2 = nAveragingTargetTimespan * (100 - nMaxAdjustUpV2) / 100;
     static final long nMaxActualTimespan = nAveragingTargetTimespan * (100 + nMaxAdjustDown) / 100;
+    static final long nMinActualTimespanP2 = nAveragingTargetTimespanP2 * (100 - nMaxAdjustUpV2) / 100;
+    static final long nMaxActualTimespanP1 = nAveragingTargetTimespanP1 * (100 + nMaxAdjustDown) / 100;
+    static final long nMaxActualTimespanP2 = nAveragingTargetTimespanP2 * (100 + nMaxAdjustDown) / 100;
 
     public static final int getInterval(int height, boolean testNet) {
             return INTERVAL;      //108
@@ -90,6 +97,11 @@ public class CoinDefinition {
     public static final int nBlockDiffAdjustV2 = 766000; // block where difficulty adjust V2 starts
 
 
+
+    public static final int Phase2Timespan_Start = 1401000;
+    public static final int GeoAvgWork_Start = 1400000;
+
+
     public static int spendableCoinbaseDepth = 100; //main.h: static const int COINBASE_MATURITY
     public static final BigInteger MAX_MONEY = BigInteger.valueOf(2000000000).multiply(Utils.COIN);                 //main.h:  MAX_MONEY
     //public static final String MAX_MONEY_STRING = "200000000";     //main.h:  MAX_MONEY
@@ -97,8 +109,8 @@ public class CoinDefinition {
     public static final BigInteger DEFAULT_MIN_TX_FEE = BigInteger.valueOf(100000);   // MIN_TX_FEE
     public static final BigInteger DUST_LIMIT = BigInteger.valueOf(1000); //main.h CTransaction::GetMinFee        0.01 coins
 
-    public static final int PROTOCOL_VERSION = 70001;          //version.h PROTOCOL_VERSION
-    public static final int MIN_PROTOCOL_VERSION = 209;        //version.h MIN_PROTO_VERSION
+    public static final int PROTOCOL_VERSION = 70003;          //version.h PROTOCOL_VERSION
+    public static final int MIN_PROTOCOL_VERSION = 70003;        //version.h MIN_PROTO_VERSION
     public static final int BIP0031_VERSION = 60000;
 
     public static final int BLOCK_CURRENTVERSION = 2;   //CBlock::CURRENT_VERSION
@@ -132,12 +144,22 @@ public class CoinDefinition {
 
     //net.cpp strDNSSeed
     static public String[] dnsSeeds = new String[] {
+            /*"209.236.123.23",
+                    "37.187.27.4",
+                    "108.24.83.254",
+                    "91.121.165.120",
+                    "213.136.68.97",
+                    "76.175.166.164",
+                    "46.163.110.77",
+                    "46.21.108.51",*/
             "seed1.myriadcoin.org",
             "seed2.myriadcoin.org",
             "seed3.myriadcoin.org",
             "seed4.myriadcoin.org",
-            "85.195.118.163",
-            "theblockexplorer.com"
+            "seed5.myriadcoin.org",
+            "seed6.myriadcoin.org",
+            "seed7.myriadcoin.org",
+            "seed8.myriadcoin.org"
     };
 
     public static int minBroadcastConnections = 1;   //0 for default; we need more peers.
@@ -220,6 +242,12 @@ public class CoinDefinition {
         checkpoints.put( 740576, new Sha256Hash("00000000000043dc047538e724f17a388146f22dd2ecf66f3c88253799912f4d"));
         checkpoints.put( 766081, new Sha256Hash("00000000000001e604a7acc2dd539ff8bd51224a7aac8647736d1af10160427d"));
         checkpoints.put(1007712, new Sha256Hash("00000000000013e0fb1ec8ba2ce0b04b1547d9ae7d9c9e5a2691aeca87559a12"));
+        checkpoints.put(1077647, new Sha256Hash("00000000000038b85361a79dd4a04b1f01ec2cc60f4176185363aa4522aab12d"));
+        checkpoints.put(1177283, new Sha256Hash("000000000000359b1fb371d92db45de64b449ea72863a51fa78fea6b7ff3989f"));
+        checkpoints.put(1336174, new Sha256Hash("00000000000001eafb1051fda69eb842577a0e48e4f0682bd7f33677373d0807"));
+        checkpoints.put(1402167, new Sha256Hash("8215cd9feb2db9bf74514361a9d4b4440f054101079df8bb6bf629065db3ab29"));
+        checkpoints.put(1449500, new Sha256Hash("ef19939e314f239999b9959ac908b20a43b165719d1c35dcfe38ba2566d20765"));
+
 
     }
 

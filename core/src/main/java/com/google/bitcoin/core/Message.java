@@ -51,6 +51,8 @@ public abstract class Message implements Serializable {
 
     // The raw message bytes themselves.
     protected transient byte[] bytes;
+    protected transient byte[] payloadBytes;
+    protected transient int payloadCursor;
 
     protected transient boolean parsed = false;
     protected transient boolean recached = false;
@@ -127,6 +129,41 @@ public abstract class Message implements Serializable {
         if (parseRetain || !parsed)
             return;
         this.bytes = null;
+    }
+
+    Message(NetworkParameters params, byte[] msg, byte[] payloadBytes, int offset, final boolean parseLazy, final boolean parseRetain, int length, int payloadCursor) throws ProtocolException {
+        this.parseLazy = parseLazy;
+        this.parseRetain = parseRetain;
+        this.protocolVersion = NetworkParameters.PROTOCOL_VERSION;
+        this.params = params;
+        this.bytes = msg;
+        this.payloadBytes = payloadBytes;
+        this.payloadCursor = payloadCursor;
+        this.cursor = offset;
+        this.offset = offset;
+        this.length = length;
+        if (parseLazy) {
+            parseLite();
+        } else {
+            parseLite();
+            parse();
+            parsed = true;
+        }
+
+        if (this.length == UNKNOWN_LENGTH)
+            checkState(false, "Length field has not been set in constructor for %s after %s parse. " +
+                            "Refer to Message.parseLite() for detail of required Length field contract.",
+                    getClass().getSimpleName(), parseLazy ? "lite" : "full");
+
+        if (SELF_CHECK) {
+            selfCheck(msg, offset);
+        }
+
+        if (parseRetain || !parsed)
+            return;
+        this.bytes = null;
+
+
     }
 
     private void selfCheck(byte[] msg, int offset) {

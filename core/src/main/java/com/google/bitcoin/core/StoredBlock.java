@@ -20,6 +20,7 @@ import com.google.bitcoin.store.BlockStore;
 import com.google.bitcoin.store.BlockStoreException;
 
 import java.io.*;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
@@ -276,10 +277,64 @@ public class StoredBlock implements Serializable {
         }
                 return BigInteger.ZERO;
             }
+    BigInteger GetPrevWorkForAlgoWithDecay3(int algo, BlockStore blockStore)
+    {
+        try {
+            int nDistance = 0;
+            //BigInteger nWork;
+            StoredBlock pindex = this.getPrev(blockStore);
+            while (pindex != null)
+            {
+                if (nDistance > 100)
+                {
+                    return BigInteger.ZERO;
+                }
+                if (pindex.getHeader().getAlgo() == algo)
+                {
+                    BigInteger nWork = pindex.getHeader().getWork();
+                    nWork = nWork.multiply(BigInteger.valueOf(100 - nDistance));
+                    nWork = nWork.divide(BigInteger.valueOf(100));
+                    return nWork;
+                }
+                pindex = this.getPrev(blockStore);
+                nDistance++;
+            }
+        }
+        catch(BlockStoreException x)
+        {
 
+        }
+        return BigInteger.ZERO;
+    }
+    public static double root(double num, double root)
+    {
+        return Math.pow(Math.E, Math.log(num)/root);
+    }
     BigInteger getWorkAdjusted(BlockStore blockStore)
     {
         BigInteger bnRes;
+        if ((getHeader().params.getId().equals(NetworkParameters.ID_TESTNET) && (height > 50)) ||
+                (height >= CoinDefinition.GeoAvgWork_Start))
+        {
+            BigInteger nBlockWork = getHeader().getWork();
+            int nAlgo = getHeader().getAlgo();
+            for (int algo = 0; algo < Block.NUM_ALGOS; algo++)
+            {
+                if (algo != nAlgo)
+                {
+                    BigInteger nBlockWorkAlt = GetPrevWorkForAlgoWithDecay3(algo, blockStore);
+                    if (nBlockWorkAlt.compareTo(BigInteger.ZERO) != 0)
+                        nBlockWork = nBlockWork.multiply(nBlockWorkAlt);
+                }
+            }
+            bnRes = nBlockWork;
+            // Compute the geometric mean
+            bnRes = BigDecimal.valueOf(root(bnRes.doubleValue(),Block.NUM_ALGOS)).toBigInteger();
+
+            // Scale to roughly match the old work calculation
+            bnRes = bnRes.shiftLeft(8);
+        }
+        else
         if ((getHeader().params.getId().equals(NetworkParameters.ID_TESTNET) && (height > 500)) ||
                 (height >= CoinDefinition.nBlockAlgoNormalisedWorkStart))
         {

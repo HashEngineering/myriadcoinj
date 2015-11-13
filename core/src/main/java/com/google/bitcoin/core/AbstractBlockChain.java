@@ -915,7 +915,7 @@ public abstract class AbstractBlockChain {
                 // take previous block if block times are out of order
                 if (firstBlockPrev.getHeader().getTimeSeconds() > firstBlockSolved.getHeader().getTimeSeconds())
                 {
-                    log.info("  First blocks out of order times, swapping:   %d   %d\n", firstBlockPrev.getHeader().getTimeSeconds(), firstBlockSolved.getHeader().getTimeSeconds());
+                    //log.info("  First blocks out of order times, swapping:   %d   %d\n", firstBlockPrev.getHeader().getTimeSeconds(), firstBlockSolved.getHeader().getTimeSeconds());
                     firstBlockSolved = firstBlockPrev;
                 }
                 else
@@ -957,7 +957,7 @@ public abstract class AbstractBlockChain {
             // take previous block if block times are out of order
             if (firstBlockPrev.getHeader().getTimeSeconds() > firstBlockSolved.getHeader().getTimeSeconds())
             {
-                log.info("  First blocks out of order times, swapping:   %d   %d\n", firstBlockPrev.getHeader().getTimeSeconds(), firstBlockSolved.getHeader().getTimeSeconds());
+                //log.info("  First blocks out of order times, swapping:   %d   %d\n", firstBlockPrev.getHeader().getTimeSeconds(), firstBlockSolved.getHeader().getTimeSeconds());
                 firstBlockSolved = firstBlockPrev;
             }
         }
@@ -997,20 +997,36 @@ public abstract class AbstractBlockChain {
             }
         }
 
-        long nMinActualTimespan;
-        if (storedPrev.getHeight() >= CoinDefinition.nBlockDiffAdjustV2)
-            nMinActualTimespan =  CoinDefinition.nMinActualTimespanV2;
-        else
-            nMinActualTimespan =  CoinDefinition.nMinActualTimespanV1;
+        long lnMinActualTimespan;
+        if ((params.getId().equals(NetworkParameters.ID_TESTNET) && storedPrev.getHeight()>=150) || (storedPrev.getHeight() >= CoinDefinition.Phase2Timespan_Start))
+            lnMinActualTimespan = CoinDefinition.nMinActualTimespanP2;
+        else {
+            if (storedPrev.getHeight() >= CoinDefinition.nBlockDiffAdjustV2)
+                lnMinActualTimespan = CoinDefinition.nMinActualTimespanV2;
+            else
+                lnMinActualTimespan = CoinDefinition.nMinActualTimespanV1;
+        }
 
-        if (nActualTimespan < nMinActualTimespan)
-            nActualTimespan = nMinActualTimespan;
-        if (nActualTimespan > CoinDefinition.nMaxActualTimespan)
-            nActualTimespan = CoinDefinition.nMaxActualTimespan;
+        long lnMaxActualTimespan = 0;
+        if ((params.getId().equals(NetworkParameters.ID_TESTNET) && storedPrev.getHeight()>=150) || (storedPrev.getHeight() >= CoinDefinition.Phase2Timespan_Start))
+            lnMaxActualTimespan = CoinDefinition.nMaxActualTimespanP2;
+        else
+            lnMaxActualTimespan = CoinDefinition.nMaxActualTimespanP1;
+
+        if (nActualTimespan < lnMinActualTimespan)
+            nActualTimespan = lnMinActualTimespan;
+        if (nActualTimespan > lnMaxActualTimespan)
+            nActualTimespan = lnMaxActualTimespan;
+
+        long lnAveragingTargetTimespan = 0;
+        if ((params.getId().equals(NetworkParameters.ID_TESTNET) && storedPrev.getHeight()>=150) || (storedPrev.getHeight() >= CoinDefinition.Phase2Timespan_Start))
+            lnAveragingTargetTimespan = CoinDefinition.nAveragingTargetTimespanP2;
+        else
+            lnAveragingTargetTimespan = CoinDefinition.nAveragingTargetTimespanP1;
 
         BigInteger newDifficulty = Utils.decodeCompactBits(lastBlockSolved.getHeader().getDifficultyTarget());
         newDifficulty = newDifficulty.multiply(BigInteger.valueOf(nActualTimespan));
-        newDifficulty = newDifficulty.divide(BigInteger.valueOf(CoinDefinition.nAveragingTargetTimespan));
+        newDifficulty = newDifficulty.divide(BigInteger.valueOf(lnAveragingTargetTimespan));
 
         if (newDifficulty.compareTo(proofOfWorkLimit) > 0) {
             log.info("Difficulty hit proof of work limit: {}", newDifficulty.toString(16));
