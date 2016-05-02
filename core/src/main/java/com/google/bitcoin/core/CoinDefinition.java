@@ -27,7 +27,7 @@ public class CoinDefinition {
     public static final CoinPrecision coinPrecision = CoinPrecision.Coins;
 
 
-    public static final String BLOCKEXPLORER_BASE_URL_PROD = "http://myriad.thwg.org/";    //block explorer
+    public static final String BLOCKEXPLORER_BASE_URL_PROD = "https://cryptap.us/myr/explorer/";    //block explorer
     public static final String BLOCKEXPLORER_ADDRESS_PATH = "address/";             //block explorer address path
     public static final String BLOCKEXPLORER_TRANSACTION_PATH = "tx/";              //block explorer transaction path
     public static final String BLOCKEXPLORER_BLOCK_PATH = "block/";                 //block explorer block path
