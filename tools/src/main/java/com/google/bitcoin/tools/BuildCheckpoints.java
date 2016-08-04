@@ -51,7 +51,7 @@ public class BuildCheckpoints {
             public void notifyNewBestBlock(StoredBlock block) throws VerificationException {
                 int height = block.getHeight();
 
-                if (height % CoinDefinition.getIntervalCheckpoints() == 0 && block.getHeader().getTimeSeconds() <= oneMonthAgo && height < BlockMergeMined.AUXPOW_START_MAINNET ) {
+                if (height % CoinDefinition.getIntervalCheckpoints() == 0 && block.getHeader().getTimeSeconds() <= oneMonthAgo /*(&& height < BlockMergeMined.AUXPOW_START_MAINNET */) {
 
  //               if (height % PARAMS.getInterval() == 0 && block.getHeader().getTimeSeconds() <= oneMonthAgo) {
 

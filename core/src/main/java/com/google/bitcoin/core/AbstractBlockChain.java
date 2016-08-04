@@ -408,10 +408,10 @@ public abstract class AbstractBlockChain {
                         nAlgoCount++;
                         prev = prev.getPrev(blockStore);
                     }
-                    if ((storedPrev.getHeight()+1 > CoinDefinition.nBlockSequentialAlgoRuleStart2) && (nAlgoCount > CoinDefinition.nBlockSequentialAlgoMaxCount2))
-                    {
-                        throw new VerificationException("add() : too many blocks from same algo (more than 3)");
-                    } else
+                    //if ((storedPrev.getHeight()+1 > CoinDefinition.nBlockSequentialAlgoRuleStart2) && (nAlgoCount > CoinDefinition.nBlockSequentialAlgoMaxCount2))
+                    //{
+                    //    throw new VerificationException("add() : too many blocks from same algo (more than 3)");
+                    //} else
                     if (nAlgoCount > CoinDefinition.nBlockSequentialAlgoMaxCount)
                     {
                         throw new VerificationException("add() : too many blocks from same algo (more than 6)");
@@ -603,6 +603,26 @@ public abstract class AbstractBlockChain {
         while (unused >= 0 && (storedBlock = storedBlock.getPrev(store)) != null)
             timestamps[unused--] = storedBlock.getHeader().getTimeSeconds();
         
+        Arrays.sort(timestamps, unused+1, 11);
+        return timestamps[unused + (11-unused)/2];
+    }
+
+    /**
+     * Gets the median timestamp of the last 11 blocks
+     */
+    private static long getMedianTimestampOfRecentBlocksThrow(StoredBlock storedBlock,
+                                                         BlockStore store) throws BlockStoreException {
+        long[] timestamps = new long[11];
+        int unused = 9;
+        timestamps[10] = storedBlock.getHeader().getTimeSeconds();
+        while (unused >= 0) {
+
+            storedBlock = storedBlock.getPrev(store);
+            if(storedBlock == null)
+                throw new BlockStoreException("Checkpoints in use, not enough blocks to calculate the median of 11 blocks.");
+            timestamps[unused--] = storedBlock.getHeader().getTimeSeconds();
+        }
+
         Arrays.sort(timestamps, unused+1, 11);
         return timestamps[unused + (11-unused)/2];
     }
@@ -979,8 +999,16 @@ public abstract class AbstractBlockChain {
         }
         //long nActualTimespan = lastBlockSolved.getHeader().getTimeSeconds() - firstBlockSolved.getHeader().getTimeSeconds();
         long nActualTimespan;
-        if (storedPrev.getHeight() >= CoinDefinition.nBlockTimeWarpPreventStart3)
-            nActualTimespan = getMedianTimestampOfRecentBlocks(lastBlockSolved, blockStore) - getMedianTimestampOfRecentBlocks(firstBlockSolved, blockStore);
+        if (storedPrev.getHeight() >= CoinDefinition.nBlockTimeWarpPreventStart3) {
+            //Determine if the medianTime will be calculated correctly.
+            try {
+                nActualTimespan = getMedianTimestampOfRecentBlocksThrow(lastBlockSolved, blockStore) - getMedianTimestampOfRecentBlocksThrow(firstBlockSolved, blockStore);
+            } catch (BlockStoreException x)
+            {
+                //not enough blocks to calculate the time.
+                return;
+            }
+        }
         else
             nActualTimespan = lastBlockSolved.getHeader().getTimeSeconds() - firstBlockSolved.getHeader().getTimeSeconds();
 

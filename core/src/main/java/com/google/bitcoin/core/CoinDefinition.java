@@ -14,7 +14,7 @@ public class CoinDefinition {
 
 
     public static final String coinName = "Myriadcoin";
-    public static final String coinTicker = "MYR";
+    public static final String coinTicker = "XMY";
     public static final String coinURIScheme = "myriadcoin";
     public static final String cryptsyMarketId = "200";
     public static final String cryptsyMarketCurrency = "BTC";
@@ -96,6 +96,7 @@ public class CoinDefinition {
     public static final int nBlockTimeWarpPreventStart3 = 1048320; // block where time warp 3 prevention starts
     public static final int nBlockDiffAdjustV2 = 766000; // block where difficulty adjust V2 starts
 
+    public static final int nFork1MinBlock = 1764000;
 
 
     public static final int Phase2Timespan_Start = 1401000;
@@ -109,7 +110,7 @@ public class CoinDefinition {
     public static final BigInteger DEFAULT_MIN_TX_FEE = BigInteger.valueOf(100000);   // MIN_TX_FEE
     public static final BigInteger DUST_LIMIT = BigInteger.valueOf(1000); //main.h CTransaction::GetMinFee        0.01 coins
 
-    public static final int PROTOCOL_VERSION = 70003;          //version.h PROTOCOL_VERSION
+    public static final int PROTOCOL_VERSION = 70004;          //version.h PROTOCOL_VERSION
     public static final int MIN_PROTOCOL_VERSION = 70003;        //version.h MIN_PROTO_VERSION
     public static final int BIP0031_VERSION = 60000;
 

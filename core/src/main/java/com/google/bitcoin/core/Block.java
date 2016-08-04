@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableList;
 import com.hashengineering.crypto.Groestl;
 import com.hashengineering.crypto.Qubit;
 import com.hashengineering.crypto.Skein;
+import com.hashengineering.crypto.Yescrypt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -599,6 +600,15 @@ public class Block extends Message {
             throw new RuntimeException(e); // Cannot happen.
         }
     }
+    private Sha256Hash calculateYescryptHash() {
+        try {
+            ByteArrayOutputStream bos = new UnsafeByteArrayOutputStream(HEADER_SIZE);
+            writeHeader(bos);
+            return new Sha256Hash(Utils.reverseBytes(Yescrypt.digest(bos.toByteArray())));
+        } catch (IOException e) {
+            throw new RuntimeException(e); // Cannot happen.
+        }
+    }
     /**
      * Returns the hash of the block (which for a valid, solved block should be below the target) in the form seen on
      * the block explorer. If you call this on block 1 in the production chain
@@ -641,6 +651,11 @@ public class Block extends Message {
     public Sha256Hash getQubitHash() {
         if (scryptHash == null)
             scryptHash = calculateQubitHash();
+        return scryptHash;
+    }
+    public Sha256Hash getYescryptHash() {
+        if (scryptHash == null)
+            scryptHash = calculateYescryptHash();
         return scryptHash;
     }
 
@@ -779,6 +794,9 @@ public class Block extends Message {
                 break;
             case ALGO_QUBIT:
                 h = getQubitHash();
+                break;
+            case ALGO_YESCRYPT:
+                h = getYescryptHash();
                 break;
             default:
                 h = getHash();
@@ -1268,9 +1286,9 @@ public class Block extends Message {
     public static final int ALGO_GROESTL = 2;
     public static final int ALGO_SKEIN   = 3;
     public static final int ALGO_QUBIT   = 4;
+    public static final int ALGO_YESCRYPT = 5;
     public static final int NUM_ALGOS = 5;
-
-    public static int BLOCK_VERSION_DEFAULT = 2;
+    public static final int NUM_ALGOS_IMPL = 6;
 
                 // algo
     public static final int             BLOCK_VERSION_ALGO           = (7 << 9);
@@ -1278,6 +1296,7 @@ public class Block extends Message {
     public static final int             BLOCK_VERSION_GROESTL        = (2 << 9);
     public static final int             BLOCK_VERSION_SKEIN          = (3 << 9);
     public static final int             BLOCK_VERSION_QUBIT          = (4 << 9);
+    public static final int             BLOCK_VERSION_YESCRYPT       = (5 << 9);
 
     public static int GetAlgo(long nVersion)
     {
@@ -1293,6 +1312,8 @@ public class Block extends Message {
                 return ALGO_SKEIN;
             case BLOCK_VERSION_QUBIT:
                 return ALGO_QUBIT;
+            case BLOCK_VERSION_YESCRYPT:
+                return ALGO_YESCRYPT;
         }
         return ALGO_SHA256D;
     }
@@ -1301,7 +1322,7 @@ public class Block extends Message {
     {
         return GetAlgo(version);
     }
-    String [] algoNames = {"sha256d", "scrypt", "groestl", "skein", "qubit"};
+    String [] algoNames = {"sha256d", "scrypt", "groestl", "skein", "qubit", "yescrypt"};
 
     public String getAlgoName() { return algoNames[GetAlgo(version)]; }
 
