@@ -27,7 +27,7 @@ include $(CLEAR_VARS)
 LOCAL_C_INCLUDES := sources/include
 
 LOCAL_MODULE    := myriad
-LOCAL_SRC_FILES := hashgroestl.c hashqubit.c hashskein.c groestl.c skein.c cubehash.c echo.c luffa.c shavite.c simd.c
+LOCAL_SRC_FILES := hashblock.cpp groestl.c skein.c cubehash.c echo.c luffa.c shavite.c simd.c sha256_Y.c yescryptcommon.c yescrypt-opt.c sha256.cpp
 
 include $(BUILD_SHARED_LIBRARY)
 

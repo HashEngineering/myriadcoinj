@@ -6,11 +6,12 @@
 #define HASH_GROESTL
 
 #include "uint256.h"
-#include "serialize.h"
+//#include "serialize.h"
 #include "sph_groestl.h"
 
-#include <openssl/sha.h>
-#include <openssl/ripemd.h>
+#include <sha256.h>
+//#include <openssl/sha.h>
+//#include <openssl/ripemd.h>
 #include <vector>
 
 
@@ -28,7 +29,10 @@ inline uint256 HashGroestl(const T1 pbegin, const T1 pend)
     sph_groestl512(&ctx_groestl, (pbegin == pend ? pblank : static_cast<const void*>(&pbegin[0])), (pend - pbegin) * sizeof(pbegin[0]));
     sph_groestl512_close(&ctx_groestl, static_cast<void*>(&hash1));
     
-    SHA256((unsigned char*)&hash1, 64, (unsigned char*)&hash2);
+    //SHA256((unsigned char*)&hash1, 64, (unsigned char*)&hash2);
+    CSHA256 SHA256;
+    SHA256.Write(hash1.begin(), 64);
+    SHA256.Finalize(hash2.begin());
     
     return hash2;
 }
