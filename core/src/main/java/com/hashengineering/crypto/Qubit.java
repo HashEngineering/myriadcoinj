@@ -29,7 +29,7 @@ public class Qubit {
         }
     }
 
-    public static byte[] digest(byte[] input, int offset, int length)
+    /*public static byte[] digest(byte[] input, int offset, int length)
     {
         byte [] buf = new byte[length];
         for(int i = 0; i < length; ++i)
@@ -37,7 +37,7 @@ public class Qubit {
             buf[i] = input[offset + i];
         }
         return digest(buf);
-    }
+    }*/
 
     public static byte[] digest(byte[] input) {
         //long start = System.currentTimeMillis();

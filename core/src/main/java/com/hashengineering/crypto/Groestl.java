@@ -48,22 +48,21 @@ public class Groestl {
 
     public static byte[] digest(byte[] input, int offset, int length)
     {
-        return groestl(input, offset, length);
-    }
-
-    public static byte[] digest(byte[] input) {
         //long start = System.currentTimeMillis();
-        /*try {
-            return native_library_loaded ? skein_native(input) : skein(input);
+        try {
+            return native_library_loaded ? groestl_native(input, offset, length) : groestl(input, offset, length);
         } catch (Exception e) {
             return null;
         }
         finally {
             //long time = System.currentTimeMillis()-start;
-            //log.info("X11 Hash time: {} ms per block", time);
+            //log.info("groestl Hash time: {} ms per block", time);
         }
-        */
-        return groestl(input);
+
+   }
+
+    public static byte[] digest(byte[] input) {
+        return digest(input, 0, input.length);
     }
 
     static native byte [] groestl_native(byte [] input, int offset, int len);

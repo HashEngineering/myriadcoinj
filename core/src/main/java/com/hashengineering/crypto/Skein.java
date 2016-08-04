@@ -46,24 +46,20 @@ public class Skein {
         }
     }
 
-    public static byte[] digest(byte[] input, int offset, int length)
-    {
-        return skein(input, offset, length);
-    }
-
-    public static byte[] digest(byte[] input) {
+    public static byte[] digest(byte[] input, int offset, int length){
         //long start = System.currentTimeMillis();
-        /*try {
-            return native_library_loaded ? skein_native(input) : skein(input);
+        try {
+            return native_library_loaded ? skein_native(input, offset, length) : skein(input, offset, length);
         } catch (Exception e) {
             return null;
         }
         finally {
             //long time = System.currentTimeMillis()-start;
-            //log.info("X11 Hash time: {} ms per block", time);
+            //log.info("Skein Hash time: {} ms per block", time);
         }
-        */
-        return skein(input);
+    }
+    public static byte[] digest(byte[] input) {
+        return digest(input, 0, input.length);
     }
 
     static native byte [] skein_native(byte [] input, int offset, int len);
