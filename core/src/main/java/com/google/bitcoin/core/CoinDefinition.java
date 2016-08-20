@@ -200,7 +200,7 @@ public class CoinDefinition {
 
     public static BigInteger proofOfWorkLimit = Utils.decodeCompactBits(0x1e0fffffL);  //main.cpp bnProofOfWorkLimit (~uint256(0) >> 20); // digitalcoin: starting difficulty is 1 / 2^12
     public static BigInteger [] proofOfWorkLimits = new BigInteger[] {
-        proofOfWorkLimit,proofOfWorkLimit,proofOfWorkLimit,proofOfWorkLimit,proofOfWorkLimit };
+        proofOfWorkLimit,proofOfWorkLimit,proofOfWorkLimit,proofOfWorkLimit,proofOfWorkLimit,proofOfWorkLimit };
 
     /*proofOfWorkLimits[Block.ALGO_SHA256D] = proofOfWorkLimit;
     proofOfWorkLimits[Block.ALGO_SCRYPT]  = proofOfWorkLimit;
